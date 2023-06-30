@@ -1,0 +1,111 @@
+---
+title: "HW8_Videtti"
+output: word_document
+---
+```{r}
+##1. The data sets package in R contains a small data set called mtcars that contains n = 32 observations of the characteristics of different automobiles. Create a new data frame from part of this data set using this command: myCars <‑ data.frame(mtcars[,1:6]). 
+myCars <- data.frame(mtcars[,1:6])
+myCars
+
+##2. Create and interpret a bivariate correlation matrix using cor(myCars) keeping in mind the idea that you will be trying to predict the mpg variable. Which other variable might be the single best predictor of mpg? 
+cor(myCars)
+
+#We see that mpg is most strongly correlated with wt, although cyl and disp are very close second and third options, respectively. Because of this, we can assume that the wt variable might be the best predictor for mpg in these data.
+
+
+
+
+##3. Run a multiple regression analysis on the myCars data with lm(), using mpg as the dependent variable and wt (weight) and hp (horsepower) as the predictors. Make sure to say whether or not the overall R‑squared was significant. If it was significant, report the value and say in your own words whether it seems like a strong result or not. Review the significance tests on the coefficients (B‑weights). For each one that was significant, report its value and say in your own words whether it seems like a strong result or not. 
+summary(lm(mpg~wt + hp, data = myCars))
+
+#We see that the p-value for the F-test is extremely low at 9.109e-12, so we will reject the null hypothesis that R-squared is equal to zero, thus, the overall R-squared was significant. The result was 0.8268, which is usually considered a very strong result, but could be considered weak in certain contexts. The intercept, wt, and hp, all are significant, as all have Pr(>|t|) < 0.05. The intercept B-weight is approximately 37.2, the B-weight of wt is approximately -3.9, and the B-weight of hp is approximately -0.03. I would say that the wt variable is a much stronger result since its value is so much larger than that of hp.
+
+
+
+
+
+
+
+
+##4. Using the results of the analysis from Exercise 2, construct a prediction equation for mpg using all three of the coefficients from the analysis (the intercept along with the two B‑weights). Pretend that an automobile designer has asked you to predict the mpg for a car with 110 horsepower and a weight of 3 tons. Show your calculation and the resulting value of mpg. 
+Exercise4 <- 37.22727 + (-3.87783*3) + (-0.03177*110)
+Exercise4
+
+
+
+
+
+
+
+
+##5. Run a multiple regression analysis on the myCars data with lmBF(), using mpg as the dependent variable and wt (weight) and hp (horsepower) as the predictors. Interpret the resulting Bayes factor in terms of the odds in favor of the alternative hypothesis. If you did Exercise 2, do these results strengthen or weaken your conclusions? 
+library(BayesFactor)
+lmBF(mpg~wt+hp, data = myCars)
+
+#We see that the Bayes factor is 788547604, meaning that there are 788547604:1 odds in favor of the alternative hypothesis (our model with wt and hp) over the null hypothesis (intercept only model). In Exercise 2, we said that wt may be the best predictor of mpg in the mtcars data, and while we haven't necessarily proven that, we have shown here that this specific model that contains wt is a very strong one.
+
+
+
+
+
+
+
+
+##6. Run lmBF() with the same model as for Exercise 4, but with the options posterior=TRUE and iterations=10000. Interpret the resulting information about the coefficients. 
+summary(lmBF(mpg~wt+hp, data = myCars,posterior = TRUE, iterations = 10000))
+
+#The means for each of the variables are essentially Bayesian estimates for the population value of the B-weights for each corresponding coefficient. The first section also contains the standard deviation of each variable in the list of 10000 values from our 10000 iterations, as well as the Naive and Time-series standard errors.
+#The second section has the quantiles for each of the variables. These can be used to construct HDI's, with the most intriguing quantiles being the 2.5% and 97.5% quantiles, which allow us to find the 95% HDI for each coefficient's B-weight.
+
+
+
+
+
+
+
+
+##7. Run install.packages() and library() for the “car” package. The car package is “companion to applied regression” rather than more data about automobiles. Read the help file for the vif() procedure and then look up more information online about how to interpret the results. Then write down in your own words a “rule of thumb” for interpreting vif.
+#install.packages("car")
+library(car)
+help(vif)
+#Per Wikipedia, the variance inflation factor is the ratio of the variance of estimating some parameter in a model that includes multiple other terms by the variance of a model constructed using only one term. It quantifies the severity of multicollinearity in an ordinary least squares regression analysis. The square root of the variance inflation factor indicates how much larger the standard error increases compared to if that variable had 0 correlation to other predictor variables in the model. For example, if the variance inflation factor of a predictor variable were 5.27 (√5.27 = 2.3), this means that the standard error for the coefficient of that predictor variable is 2.3 times larger than if that predictor variable had 0 correlation with the other predictor variables.
+
+#Multiple other online sources state that a variance inflation factor between 4 and 10 indicates a chance of mutlicollinearity, and that a vif of 10 or above indicates high multicollinearity.
+
+#Rule of Thumb for Interpreting VIF:
+#VIF = 1: no multicollinearity
+#VIF >= 4 and < 10: chance of multicollinearity
+#VIF >= 10: high multicollinearity
+
+
+
+
+
+
+
+##8. Run vif() on the results of the model from Exercise 2. Interpret the results. Then run a model that predicts mpg from all five of the predictors in myCars. Run vif() on those results and interpret what you find. 
+vif(lm(mpg~wt + hp, data = myCars))
+#There does not appear to be any multicollinearity in this model.
+sqrt(vif(lm(mpg~wt + hp, data = myCars)))
+#The standard error for both wt and hp is 1.329144 times larger than if they had 0 correlation with each other.
+
+vif(lm(mpg~., data = myCars))
+#Per our rule of thumb in Exercise 7, there is cause for concern for multicollinearity with 4 out of 5 of these variables. We see that the vif is above 10 for disp, which indicates high multicollinearity. The cyl and wt variables have a vif above 4, which indicates a chance of multicollinearity, although hp is almost there as well at 3.99.
+sqrt(vif(lm(mpg~., data = myCars)))
+#The standard error for cyl is 2.805176 times larger than if it had 0 correlation with the other predictor variables in this model.
+#The standard error for disp is 3.234804 times larger than if it had 0 correlation with the other predictor variables in this model.
+#The standard error for hp is 1.997594 times larger than if it had 0 correlation with the other predictor variables in this model.
+#The standard error for drat is 1.631655 times larger than if it had 0 correlation with the other predictor variables in this model.
+#The standard error for wt is 2.273498 times larger than if it had 0 correlation with the other predictor variables in this model.
+
+
+
+
+
+
+
+
+
+
+
+```
