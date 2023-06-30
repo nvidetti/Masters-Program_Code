@@ -1,0 +1,196 @@
+# Introduction to Data Science HW 4
+##### Copyright Jeffrey Stanton, Jeffrey Saltz, and Jasmina Tacheva
+
+
+```{r}
+# Enter your name here: Nick Videtti
+```
+
+### Attribution statement: (choose only one and delete the rest)
+
+
+```{r}
+# 2. I did this homework with help from the book and the professor and these Internet sources: Google for the double colon operator found in the first chunk and for the & operator for subsetting a data frame on multiple criteria.
+```
+
+Reminders of things to practice from previous weeks: <br>
+Descriptive statistics: 	mean( ) max( ) min( )<br>
+Coerce to numeric:		as.numeric( )<br>
+
+## Part 1: Use the Starter Code 
+
+Below, I have provided a starter file to help you. <br>
+
+Each of these lines of code **must be commented** (the comment must that explains what is going on, so that I know you understand the code and results).
+
+
+```{r}
+library(jsonlite)
+#We are loading the jsonlite package because it allows us to read data into R that is in a JSON format using he fromJSON function.
+
+dataset <- url("https://intro-datascience.s3.us-east-2.amazonaws.com/role.json")
+#We are assigning the url to the variable "dataset" so we do not need to type out the whole thing in later references.
+
+readlines <- jsonlite::fromJSON(dataset)
+#This is where we use the fromJSON function to read in our JSON-formatted data to R. We are also assigning it to the readlines variable so we do not need to type out the whole thing in later references.
+
+df <- readlines$objects$person
+#We are assigning the above subset of our data to the df variable. This will be a data frame.
+```
+
+A.	Explore the **df** dataframe (e.g., using head() or whatever you think is best).
+
+
+```{r}
+str(df)
+# 100 observations of 17 variables, 16 of character mode and 1 of integer mode.
+
+#This should mean we have 100 rows and 17 columns.
+nrow(df)
+ncol(df)
+#And we see this is indeed the case.
+
+head(df)
+#Still a little tough to wrap our heads around. Lets just look at one row.
+
+df[1,]
+#The column names are pretty long, lets use the View function to look at this in a more readable way.
+
+View(df)
+#Much better!! Okay, now I think we have an idea about our df data frame.
+```
+
+B.	Explain the dataset <br>
+o	What is the dataset about? <br>
+o	How many rows are there and what does a row represent?<br>
+o	How many columns and what does each column represent?<br>
+
+
+
+```{r}
+#This appears to be a data set of United States Senators with some attributes corresponding to them.
+
+#There are 100 rows of data, meaning that there are 100 different United States Senators in these data, since each row represents one United States Senator.
+nrow(df)
+
+#There are 17 columns of data. Each column represents an attribute of the corresponding United States Senator.
+ncol(df)
+```
+
+C. What does running this line of code do? Explain in a comment:
+
+
+```{r}
+vals <- substr(df$birthday,1,4)
+vals
+#This line of code takes the birth year and stores in into the vector we have named "vals". Since all birthdays (specifically the df$birthdays column) are of mode character and start with the full 4-digit year, we can use the substr function to take a substring of each value in df$birthdays. The 1 means we start at the first character, while the 4 means we take the following 4 characters from our starting point, inclusive, thus taking the first 4 characters of the value in df$birthdays.
+```
+
+D. Create a new attribute 'age' - how old the person is 
+**Hint:** You may need to convert it to numeric first.
+
+
+```{r}
+#Using this method, we are assuming that all birthdays occur at January 1st at 12:00:00 AM, or I guess we at least assume that all birthdays occur before our current point in the year. This also will be incorrect once the following year happens even if the first assumption was correct. However, for simplicity, we will stick with taking the year of each birthday (vals) and subtracting it from the current year of 2022. We will indeed need to use "vals" as a numeric in our calculation.
+
+df$age <- 2022 - as.numeric(vals)
+
+df$age
+
+df[,c("age","birthday")]
+#Looks good!!
+```
+
+E. Create a function that reads in the role json dataset, and adds the age attribute to the dataframe, and returns that dataframe
+
+
+```{r}
+role_with_age <- function(role_data,current_year){
+  library(jsonlite)
+  data <- fromJSON(url(role_data))
+  data$objects$person$age <- as.numeric(current_year)
+    - as.numeric(substr(data$objects$person$birthday,1,4))
+  return(data$objects$person)
+}
+```
+
+F. Use (call, invoke) the function, and store the results in df
+
+
+```{r}
+df <- role_with_age("https://intro-datascience.s3.us-east-2.amazonaws.com/role.json",2022)
+```
+
+## Part 2: Investigate the resulting dataframe 'df'
+
+A.	How many senators are women? 
+
+
+```{r}
+colnames(df)
+
+#Looks like the "gender" and "gender_label" columns could be used. Let us check them both out real quick.
+
+df[1:10,c('gender','gender_label')]
+
+#These appear to be the same thing, just one has all lowercase letters and one has the first letter in uppercase. We will use gender.
+
+nrow(df[df$gender == 'female',])
+#There are 24 senators that are female of the 100 in these data.
+
+nrow(df[df$gender == 'male',])
+#There are 76 men in these data.
+```
+
+B.	How many senators have a YouTube account?  
+
+
+```{r}
+#Let us first see how a "null" YouTube account is indicated. But I forgot the name of the YouTube column, so lets bring up the column names again.
+colnames(df)
+
+#youtubeid it is!!
+
+df$youtubeid
+#Alrighty, some good ol' fashioned NA's, piece of cake!
+
+nrow(df) - nrow(df[is.na(df$youtubeid),])
+#There are 73 senators in these data with a YouTube account.
+
+#This means there should be 27 without one.
+nrow(df[is.na(df$youtubeid),])
+#There are indeed 27 senators in these data without a YouTube account.
+```
+
+C.	 How many women senators have a YouTube account?
+
+
+```{r}
+#We want gender to be female and youtubeid to not be NA.
+nrow(df[df$gender == 'female' & is.na(df$youtubeid) == FALSE,])
+#There are 16 woman senators that have a YouTube account.
+```
+
+D.	Create a new dataframe called **youtubeWomen** that only includes women senators who have a YouTube account.   
+
+
+```{r}
+#We will simply take our code from part C and remove it from the nrow function, then assign it to youtubeWomen.
+
+youtubeWomen <- df[df$gender == 'female' & is.na(df$youtubeid) == FALSE,]
+```
+
+E.	Make a histogram of the **age** of senators in **youtubeWomen**, and then another for the senetors in **df**. Add a comment describing the shape of the distributions.
+
+
+```{r}
+hist(youtubeWomen$age, main = "Ages of Senators In youtubeWomen", xlab = "AGE", ylab = "SENATORS", breaks = length(youtubeWomen$age))
+#OR
+hist(youtubeWomen$age, main = "Ages of Senators In youtubeWomen", xlab = "AGE", ylab = "SENATORS")
+#In both histograms, the distribution of data appear to be skewed left.
+
+hist(df$age, main = "Ages of Senators In df", xlab = "AGE", ylab = "SENATORS", breaks = length(df$age))
+#OR
+hist(df$age, main = "Ages of Senators In df", xlab = "AGE", ylab = "SENATORS")
+#In both of these histograms, data appear to be distributed slightly skewed left, but much less skewed and much closer to normal distribution that that of the ages in youtubeWomen. Perhaps this is more of a result of differences in sample size between youtubeWomen and df than a result of actual differences between any given sample from each data frame.
+```

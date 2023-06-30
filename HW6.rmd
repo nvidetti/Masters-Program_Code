@@ -1,0 +1,208 @@
+# Intro to Data Science - HW 6
+##### Copyright Jeffrey Stanton, Jeffrey Saltz, and Jasmina Tacheva
+
+
+```{r}
+# Enter your name here: Nick Videtti
+```
+
+
+### Attribution statement: (choose only one and delete the rest)
+
+
+```{r}
+# 2. I did this homework with help from the book and the professor and these Internet sources: Google
+```
+
+Last assignment we explored **data visualization** in R using the **ggplot2** package. This homework continues to use ggplot, but this time, with maps.  In addition, we will merge datasets using the built-in **merge( )** function, which provides a similar capability to a **JOIN in SQL** (don't worry if you do not know SQL). Many analytical strategies require joining data from different sources based on a **“key”** – a field that two datasets have in common. 
+
+## Step 1: Load the population data
+
+A.	Read the following JSON file, https://intro-datascience.s3.us-east-2.amazonaws.com/cities.json and store it in a variable called **pop**.
+
+Examine the resulting pop dataframe and add comments explaining what each column contains.
+
+
+
+```{r}
+library(jsonlite)
+pop <- fromJSON("https://intro-datascience.s3.us-east-2.amazonaws.com/cities.json")
+
+summary(pop)
+str(pop)
+
+#There are 7 variables in these data:
+
+#city is a character that contains names of the city of the location.
+
+#growth_from_2000_to_2013 appears to be percent change in population of the location from 2000 to 2013, but is in mode character, perhaps to show the percent symbol.
+
+#latitude is a numeric that gives the latitude of the location rounded to the nearest tenth of a degree.
+
+#longitude is a numeric that gives the longitude of the location rounded to the nearest tenth of a degree.
+
+#population is a character that gives the population of the location.
+
+#rank is a character that seems to be unique for each location. Perhaps this is just a row ID or a key to uniquely identify each row of data.
+
+#state is a character that contains names of the state of the location.
+```
+
+B.	Calculate the **average population** in the dataframe. Why is using mean() directly not working? Find a way to correct the data type of this variable so you can calculate the average (and then calculate the average)
+
+Hint: use **str(pop)** or **glimpse(pop)** to help understand the dataframe
+
+
+```{r}
+mean(pop$population)
+
+#This does not work because population is of mode character, so we will need to look at it in terms of a numeric in order to do any type of aggregate functions on it.
+
+mean(as.numeric(pop$population))
+#The average population is 131,132.4
+
+#We also probably want to add a column to our data for population as a numeric
+pop$population_numeric <- as.numeric(pop$population)
+
+#Let's check to make sure we still get 131,132.4
+mean(pop$population_numeric)
+#Indeed we do!
+```
+
+C.	What is the population of the smallest city in the dataframe? Which state is it in?
+
+
+```{r}
+names(pop)
+
+#This shows that we want columns 1, 7, and 8 where population is the minimum population for these data.
+
+pop[pop$population_numeric == min(pop$population_numeric),c(1,7,8)]
+
+#The smallest population in these data is 36,877. This is in Panama City, Florida.
+```
+
+## Step 2: Merge the population data with the state name data
+
+D)	Read in the state name .csv file from the URL below into a dataframe named **abbr** (for "abbreviation") – make sure to use the read_csv() function from the tidyverse package: <br>
+https://intro-datascience.s3.us-east-2.amazonaws.com/statesInfo.csv
+
+
+
+```{r}
+library(tidyverse)
+
+abbr<- read.csv("https://intro-datascience.s3.us-east-2.amazonaws.com/statesInfo.csv")
+
+#Lets just make sure this worked.
+head(abbr)
+#It worked indeed!
+```
+
+E)	To successfully merge the dataframe **pop** with the **abbr** dataframe, we need to identify a **column they have in common** which will serve as the **“key”** to merge on. One column both dataframes have is the **state column**. The only problem is the slight column name discrepancy – in **pop**, the column is called **“state”** and in **abbr** – **“State.”** These names need to be reconciled for the merge() function to work. Find a way to rename **abbr’s “State”** to **match** the **state column in pop**.    
+
+
+```{r}
+names(abbr)[names(abbr) == "State"] <- "state"
+
+#Did that work?
+names(abbr)
+#Yes it did!
+```
+
+F)	Merge the two dataframes (using the **‘state’ column** from both dataframes), storing the resulting dataframe in **dfNew**.
+
+
+```{r}
+dfNew <- merge(pop,abbr,by = "state")
+
+#Let's see what we got!
+head(dfNew)
+#Looks good!!
+```
+
+G)	Review the structure of **dfNew** and explain the columns (aka attributes) in that dataframe.
+
+
+```{r}
+str(dfNew)
+
+#There are 9 variables in these data:
+
+#city is a character that contains names of the city of the location.
+
+#growth_from_2000_to_2013 appears to be percent change in population of the location from 2000 to 2013, but is in mode character, perhaps to show the percent symbol.
+
+#latitude is a numeric that gives the latitude of the location rounded to the nearest tenth of a degree.
+
+#longitude is a numeric that gives the longitude of the location rounded to the nearest tenth of a degree.
+
+#population is a character that gives the population of the location.
+
+#rank is a character that seems to be unique for each location. Perhaps this is just a row ID or a key to uniquely identify each row of data.
+
+#state is a character that contains names of the state of the location.
+
+#population_numeric is the population column in mode numeric. We created this in Step 1 Part B.
+
+#Abbreviation is the column we merged with the pop data from the abbr data. This is a character that gives the abbreviation of each state's name in the data.
+```
+
+## Step 3: Visualize the data
+
+H)	Plot points (on top of a map of the US) for **each city**. Have the **color** represent the **population**.
+
+
+```{r}
+library(ggplot2)
+library(maps)
+library(ggmap)
+library(mapproj)
+Step3PartH <- ggplot(dfNew,aes(x=longitude,y=latitude,map_id = tolower(state))) + geom_map(map=map_data("state"),color = "black",fill = "white") + expand_limits(x=dfNew$longitude,y=dfNew$latitude) + coord_map() + geom_point(aes(color=population_numeric))
+Step3PartH
+```
+
+I)	Add a block comment that criticizes the resulting map. It’s not very good.
+
+
+```{r}
+#This map has a couple points far outside of the continental United States, resulting in the map not being focused on the continental United States. This makes it more difficult to see the distance between any two points and makes the points stack on top of each other more than they would if we were more zoomed in. Also, the color scale is not contrasting enough to truly be effective in showing any differences between city populations.
+```
+
+## Step 4: Group by State
+
+
+J)	Use group_by and summarise to make a dataframe of state-by-state population. Store the result in **dfSimple**.
+
+
+```{r}
+dfSimple <- dfNew %>% group_by(state) %>% summarise(population = sum(population_numeric))
+
+#Let's see how that went...
+dfSimple
+#Looks good!!
+```
+
+K)	Name the most and least populous states in **dfSimple** and show the code you used to determine them.
+
+
+```{r}
+#Most Populous State:
+dfSimple[dfSimple$population == max(dfSimple$population),"state"]
+#California is the most populous state according to these data.
+
+#Least Populous State:
+dfSimple[dfSimple$population == min(dfSimple$population),"state"]
+#Vermont is the least populous state according to these data.
+```
+
+## Step 5: Create a map of the U.S.,  with the color of the state representing the state population
+
+L) Make sure to expand the limits correctly and that you have used **coord_map** appropriately.
+
+
+
+```{r}
+Step5 <- ggplot(dfSimple,aes(map_id = tolower(state))) + geom_map(map = map_data("state"),aes(color = "orange",fill = population)) + expand_limits(x=map_data("state")$long,y=map_data("state")$lat) + coord_map()
+Step5
+```

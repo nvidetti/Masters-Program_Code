@@ -1,0 +1,249 @@
+# Intro to Data Science - HW 3
+##### Copyright Jeffrey Stanton, Jeffrey Saltz, and Jasmina Tacheva
+
+
+```{r}
+# Enter your name here: Nick Videtti
+```
+
+### Attribution statement: (choose only one and delete the rest)
+
+
+```{r}
+# 2. I did this homework with help from the book and the professor and these Internet sources: Google for the is.na() and nrow() functions.
+```
+
+### Reminders of things to practice from last week: 
+Make a data frame		data.frame( ) <br>
+Row index of max/min	which.max( )  which.min( )<br>
+Sort value or order rows	sort( )   order( )<br>
+Descriptive statistics 	mean( ) sum( ) max( ) <br>
+Conditional statement	if (condition) “true stuff” else “false stuff”<br>
+
+### This Week: 
+Often, when you get a dataset, it is not in the format you want. You can (and should) use code to refine the dataset to become more useful. As Chapter 6 of Introduction to Data Science mentions, this is called “data munging.” In this homework, you will read in a dataset from the web and work on it (in a data frame) to improve its usefulness.
+
+
+## Part 1: Use read_csv( ) to read a CSV file from the web into a data frame:
+
+A.	Use R code to read directly from a URL on the web. Store the dataset into a new dataframe, called dfComps. <br>
+The URL is:    <br>
+"https://intro-datascience.s3.us-east-2.amazonaws.com/companies1.csv" <br>
+**Hint:** use read_csv( ), not read.csv( ). This is from the **tidyverse package**. Check the help to compare them.
+
+
+
+```{r}
+library(tidyverse)
+dfComps <- read_csv("https://intro-datascience.s3.us-east-2.amazonaws.com/companies1.csv")
+```
+
+## Part 2: Create a new data frame that only contains companies with a homepage URL:
+
+E.	Use **subsetting** to create a new dataframe that contains only the companies with homepage URLs (store that dataframe in **urlComps**).
+
+
+```{r}
+urlComps <- dfComps[is.na(dfComps$homepage_url)==FALSE,]
+```
+
+D.	How many companies are missing a homepage URL?
+
+
+```{r}
+nrow(dfComps) - nrow(urlComps)
+#OR
+nrow(dfComps[is.na(dfComps$homepage_url)==TRUE,])
+
+#3323 Rows
+```
+
+## Part 3: Analyze the numeric variables in the dataframe.
+
+G.	How many **numeric variables** does the dataframe have? You can figure that out by looking at the output of **str(urlComps)**. 
+
+H.	What is the average number of funding rounds for the companies in **urlComps**?
+
+
+```{r}
+str(urlComps)
+#2 numeric variables
+
+mean(urlComps$funding_rounds)
+#1.725194 funding rounds on average for companies in urlComps
+```
+
+I.	What year was the oldest company in the dataframe founded? <br>
+**Hint:** If you get a value of “NA,” most likely there are missing values in this variable which preclude R from properly calculating the min & max values. You can ignore NAs with basic math calculations. For example, instead of running mean(urlComps$founded_year), something like this will work for determining the average (note that this question needs to use a different function than 'mean'. 
+
+
+```{r}
+#mean(urlComps$founded_year, na.rm=TRUE)
+
+#your code goes here
+
+min(urlComps$founded_year, na.rm = TRUE)
+#The oldest company in urlComps was founded in 1900
+```
+
+## Part 4:  Use string operations to clean the data.
+
+K.	The **permalink variable** in **urlComps** contains the name of each company but the names are currently preceded by the prefix “/organization/”. We can use str_replace() in tidyverse or gsub() to clean the values of this variable:
+
+
+```{r}
+urlComps$permalink <- gsub('/organization/','',urlComps$permalink)
+```
+
+L.	Can you identify another variable which should be numeric but is currently coded as character? Use the as.numeric() function to add a new variable to **urlComps** which contains the values from the char variable as numbers. Do you notice anything about the number of NA values in this new column compared to the original “char” one?  
+
+
+```{r}
+str(urlComps)
+#funding_total_usd should be numeric
+
+urlComps$funding_total_usd_new <- as.numeric(urlComps$funding_total_usd)
+#funding_total_usd_new is now numeric
+
+nrow(urlComps[is.na(urlComps$funding_total_usd==TRUE),])
+#0 nulls in funding_total_usd
+
+nrow(urlComps[is.na(urlComps$funding_total_usd_new==TRUE),])
+#44407 nulls in funding_total_usd_new
+
+urlComps[is.na(urlComps$funding_total_usd_new)==TRUE,'funding_total_usd']
+#This appears to be since there are spaces in funding_total_usd where there should be commas.Although, even commas would cause an issue, as seen below.
+as.numeric('7,000')
+```
+
+M.	To ensure the char values are converted correctly, we first need to remove the spaces between the digits in the variable. Check if this works, and explain what it is doing:
+
+
+```{r}
+library(stringi)
+urlComps$funding_new <- stri_replace_all_charclass(urlComps$funding_total_usd,"\\p{WHITE_SPACE}", "")
+
+urlComps[is.na(urlComps$funding_total_usd_new)==TRUE,'funding_new']
+#This appears to have worked! It removed all spaces from each value in funding_total_usd and stored that into a new variable called funding_new
+```
+
+
+    Error in stri_replace_all_charclass(urlComps$funding_total_usd, "\\p{WHITE_SPACE}", : object 'urlComps' not found
+    Traceback:
+
+
+    1. stri_replace_all_charclass(urlComps$funding_total_usd, "\\p{WHITE_SPACE}", 
+     .     "")
+
+
+N. You are now ready to convert **urlComps$funding_new** to numeric using as.numeric(). 
+
+Calculate the average funding amount for **urlComps**. If you get “NA,” try using the **na.rm=TRUE** argument from problem I.
+
+
+```{r}
+urlComps$funding_new_numeric <- as.numeric(urlComps$funding_new)
+
+nrow(urlComps[is.na(urlComps$funding_new_numeric)==TRUE,])
+#Still some nulls, what's going on?
+
+urlComps[is.na(urlComps$funding_new_numeric)==TRUE,'funding_total_usd']
+#This appears to be correct! These are null becasue you can't convert a string of dashes into a numeric variable value.
+
+
+mean(urlComps$funding_new_numeric)
+#We're gonna need na.rm = TRUE
+
+mean(urlComps$funding_new_numeric, na.rm = TRUE)
+#The average funding amount for urlComps is $18,321,551.
+```
+
+Sample three unique observations from urlComps$funding_rounds, store the results in the vector 'observations'
+
+
+```{r}
+observations <- sample(urlComps$funding_rounds,3,replace = FALSE)
+#replace = FALSE because we do not want to repeat sampling the same observation twice. This way we will be truly sampling three unique observations.
+```
+
+Take the mean of those observations
+
+
+```{r}
+mean(observations, na.rm = TRUE)
+```
+
+Do the two steps (sampling and taking the mean) in one line of code
+
+
+```{r}
+mean(sample(urlComps$funding_rounds,3,replace = FALSE), na.rm = TRUE)
+#This may be different than the previous mean because the sampling is being reiterated and may result in a different sample set than we have in the observations vector.
+```
+
+Explain why the two means are (or might be) different
+
+Use the replicate( ) function to repeat your sampling of three observations of urlComps$funding_rounds  observations five times. The first argument to replicate( ) is the number of repeats you want. The second argument is the little chunk of code you want repeated.
+
+
+```{r}
+replicate(5,sample(urlComps$funding_rounds,3,replace = FALSE))
+```
+
+Rerun your replication, this time doing 20 replications and storing the output of replicate() in a variable called **values**.
+
+
+```{r}
+values <- replicate(20,sample(urlComps$funding_rounds,3,replace = FALSE))
+```
+
+Generate a **histogram** of the means stored in **values**. 
+
+
+```{r}
+hist(values)
+```
+
+Rerun your replication, this time doing 1000 replications and storing the output of replicate() in a variable called **values**, and then generate a histogram of **values**.
+
+
+```{r}
+values <- replicate(1000,sample(urlComps$funding_rounds,3,replace = FALSE))
+
+hist(values)
+```
+
+Repeat the replicated sampling, but this time, raise your sample size from 3 to 22. How does that affect your histogram? Explain in a comment.
+
+
+```{r}
+values <- replicate(1000,sample(urlComps$funding_rounds,22,replace = FALSE))
+
+hist(values)
+#The frequencies increase each time the number of replications and the sample size are increased. The frequencies will add up to the product of the number of replications and the sample size. This histogram's frequencies will add up to 1000*22 = 22,000, while the previous histogram's frequencies will add up to 1000*3 = 3000.
+```
+
+Explain in a comment below, the last three histograms, why do they look different?
+
+
+```{r}
+#The frequencies will add up to the product of the number of replications and the sample size. The first histogram's observations will add up to 20*3 = 60. The second histogram's frequencies will add up to 1000*3 = 3000. The third histogram's frequencies will add up to 1000*22 = 22,000.
+
+#Also, the histograms start to approach the actual distribution of the funding_rounds variable as we increase the number of replications and sample size.
+
+
+
+#Histogram 1 vs. Actual
+hist(replicate(20,sample(urlComps$funding_rounds,3,replace = FALSE)))
+hist(urlComps$funding_rounds)
+
+
+#Histogram 2 vs. Actual
+hist(replicate(1000,sample(urlComps$funding_rounds,3,replace = FALSE)))
+hist(urlComps$funding_rounds)
+
+
+#Histogram 3 vs. Actual
+hist(replicate(1000,sample(urlComps$funding_rounds,22,replace = FALSE)))
+hist(urlComps$funding_rounds)
+```
