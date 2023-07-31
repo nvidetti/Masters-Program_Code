@@ -1,0 +1,86 @@
+---
+title: "HW9_Videtti"
+output: word_document
+---
+```{r}
+##1. The built‑in data sets of R include one called “mtcars,” which stands for Motor Trend cars. Motor Trend was the name of an automotive magazine and this data set contains information on cars from the 1970s. Use “?mtcars” to display help about the data set. The data set includes a dichotomous variable called vs, which is coded as 0 for an engine with cylinders in a v‑shape and 1 for so called “straight” engines. Use logistic regression to predict vs, using two metric variables in the data set, gear (number of forward gears) and hp (horsepower). Interpret the resulting null hypothesis significance tests.
+?mtcars
+Exercise1 <- glm(vs~gear+hp, data = mtcars, family = binomial)
+summary(Exercise1)
+
+#For the NHSTs in these results, we see that the intercept is NOT statistically significant from 0, nor is the coefficient for the gear variable. However, the coefficient for the hp variable is indeed statistically significant from 0. 
+
+
+
+
+
+##5. As noted in the chapter, the install add‑in package contains a procedure for generating pseudo‑R‑squared values from the output of the glm() procedure. Use the results of Exercise 1 to generate, report, and interpret a Nagelkerke pseudo‑R‑squared value.
+library(BaylorEdPsych)
+PseudoR2(Exercise1)["Nagelkerke"]
+
+#The Nagelkerke Pseudo R-squared is 0.7789526. This can loosely be interpreted by saying that about 77.9% of the variance in vs is caused by gear(number of forward gears) and hp(horsepower).
+
+
+
+##6. Continue the analysis of the Chile data set described in this chapter. The data set is in the “car” package, so you will have to install.packages() and library() that package first, and then use the data(Chile) command to get access to the data set. Pay close attention to the transformations needed to isolate cases with the Yes and No votes as shown in this chapter. Add a new predictor, statusquo, into the model and remove the income variable. Your new model specification should be vote ~ age + statusquo. The statusquo variable is a rating that each respondent gave indicating whether they preferred change or maintaining the status quo. Conduct general linear model and Bayesian analysis on this model and report and interpret all relevant results. Compare the AIC from this model to the AIC from the model that was developed in the chapter (using income and age as predictors). 
+library(car)
+
+#GENERAL LINEAR MODEL
+data(Chile)
+ChileY <- Chile[Chile$vote == 'Y',]
+ChileN <- Chile[Chile$vote == 'N',]
+ChileYN <-rbind(ChileY,ChileN)
+ChileYN <- ChileYN[complete.cases(ChileYN),]
+ChileYN$vote <- factor(ChileYN$vote,levels=c('N','Y')) 
+summary(chOut <- glm(formula = vote ~ age + statusquo, family = binomial(), data = ChileYN))
+exp(coef(chOut))
+exp(confint(chOut))
+#Our output from the summary of the model shows us that only the statusquo variable is significantly different from zero. That is, the log Odds of a "Yes" vote are not statistically significantly affected at the intercept level, or by the age variable. Also, the straight odds for the intercept, age, and statusquo look to be approximately 0.82:1, 1.01:1, and 23.91:1, respectively, in favor of a "Yes" vote. However, only statusquo was statistically significant, so we can really only interpret that. The interpretation is that for each 1 point increase in statusquo, the chances of a yes vote increase by almost 2300% (2291.45% to be more specific). Our confidence intervals for the straight odds are seen as the last output. Note that the confidence interval straddles 1:1 odds for Intercept and age, confirming our findings from earlier that they are not statistically significant. The 95% confidence interval for statusquo, however, is approximately 18.3:1 to 32.1:1 odds in favor of a "Yes" vote. One last thing to note is the AIC for this model, which is 740.52, is much smaller than the AIC for the model in the chapter, which was 2332. This means that the model with statusquo is a much better model than the one from the chapter.
+
+
+#BAYESIAN ANALYSIS
+library(MCMCpack)
+ChileYN$vote <- as.numeric(ChileYN$vote) - 1
+set.seed(1)
+bayesLogitOut <- MCMClogit(formula = vote ~ age + statusquo, data = ChileYN)
+summary(bayesLogitOut)
+
+#The output gives us point estimates for each coefficient in the first section under the "Mean" column. The second section gives us our quantiles for each variable, which can be used to create HDI's. We do need to keep in mind that these are in terms of log odds, so to interpret, we need to convert to straight odds. For the HDI's we see that for straight odds, they range over the following values.
+
+#Intercept
+c(exp(-0.742761),exp(0.34439))
+
+#age
+c(exp(-0.002005),exp(0.02499))
+
+#statusquo
+c(exp(2.914442),exp(3.48698))
+
+#Once again, we find that the intercept and the age variable are not significant, but the statusquo variable is, since the 95% HDI's for the intercept and for age overlap 1:1 odds, and the status quo 95% HDI does not. We can interpret the point estimate for statusquo after we turn it from log odds to straight odds.
+
+exp(3.19061)
+#we get roughly 24.3:1 odds increase in favor of a "Yes" vote for each 1 point increase in statusquo. This is very similar to the 23.9:1 odds we found for the same variable in the earlier part of this question where we performed an analysis on the generalized linear model.
+
+
+
+
+
+##7. Bonus R code question: Develop your own custom function that will take the posterior distribution of a coefficient from the output object from an MCMClogit() analysis and automatically create a histogram of the posterior distributions of the coefficient in terms of regular odds (instead of log‑odds). Make sure to mark vertical lines on the histogram indicating the boundaries of the 95% HDI.
+Exercise7 <- function(formula,data,coef_name){
+  LogitOut <- MCMClogit(formula = formula, data = data)
+  LogOdds <- as.matrix(LogitOut[,coef_name]) 
+  Odds <- apply(LogOdds,1,exp)
+  hist(Odds)
+  abline(v=quantile(Odds,c(0.025)),col='black')
+  abline(v=quantile(Odds,c(0.975)),col='black')}
+
+#TESTING (using example from book):
+Exercise7(formula = vote ~ age + income, data = ChileYN, coef_name = "age")
+
+#Looks good!
+
+
+
+
+
+```

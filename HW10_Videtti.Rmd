@@ -1,0 +1,78 @@
+---
+title: "HW10_Videtti"
+output: word_document
+---
+```{r}
+##2. Download and library the nlme package and use data (“Blackmore”) to activate the Blackmore data set. Inspect the data and create a box plot showing the exercise level at different ages. Run a repeated measures ANOVA to compare exercise levels at ages 8, 10, and 12 using aov(). You can use a command like, myData <-Blackmore[Blackmore$age <=12,], to subset the data. Keeping in mind that the data will need to be balanced before you can conduct this analysis, try running a command like this, table(myData$subject,myData$age)), as the starting point for cleaning up the data set.
+library(nlme)
+library(car)
+data("Blackmore")
+str(Blackmore)
+head(Blackmore)
+boxplot(exercise~age,data = Blackmore)
+myData <-Blackmore[Blackmore$age %in% c(8,10,12),]
+table(myData$subject,myData$age)
+list <- rowSums(table(myData$subject,myData$age)) == 3
+list <- as.numeric(names(list[list == TRUE]))
+Exercise2 <- myData[myData$subject %in% list,]
+boxplot(exercise~age,data = Exercise2)
+summary(aov(exercise ~ age + Error(subject), data = Exercise2))
+
+
+
+
+
+
+##5. Given that the AirPassengers data set has a substantial growth trend, use diff() to create a differenced data set. Use plot() to examine and interpret the results of differencing. Use cpt.var() to find the change point in the variability of the differenced time series. Plot the result and describe in your own words what the change point signifies.
+Exercise5 <- diff(AirPassengers)
+plot(Exercise5)
+#We see in this plot that month-to-month changes in airline passengers increases in magnitude gradually over time between 1949 and 1960
+
+library(changepoint)
+cpt.var(Exercise5)
+plot(cpt.var(Exercise5))
+#This change point is at 76, meaning the 76th month after the start, or 6 years and 4 months after January 1949, or April of 1955. This was found by looking for the an instance of a change in variance that results in the MBIC > 14.88853, given the type of test statistic we used (in this case, the default of "Normal"). This means our test found that between 1949 and 1960, April 1955 was the first month with a month-to-month change in the variance that was significant enough to reach that MBIC penalty. Our red line in the plot confirms that the change point is at about April 1955.
+
+
+
+
+##6. Use cpt.mean() on the AirPassengers time series. Plot and interpret the results. Compare the change point of the mean that you uncovered in this case to the change point in the variance that you uncovered in Exercise 5. What do these change points suggest about the history of air travel?
+cpt.mean(AirPassengers)
+plot(cpt.mean(AirPassengers))
+#This change point is at 77, meaning the 77th month after the start, or 6 years and 5 months after January 1949, or May of 1955. This was found by looking for the an instance of a change in mean that results in the MBIC > 14.90944, given the type of test statistic we used (in this case, the default of "Normal"). This means our test found that between 1949 and 1960, May 1955 was the first month with a month-to-month change in the mean that was significant enough to reach that MBIC penalty. Our red lines in the plot confirm that the change point is at about May 1955.
+
+#This is very similar to the change point found in the variance in Exercise 5, in fact, only one element (or in this case, one month) off. These change points suggest that international air travel had a very significant change around this period in time in terms of popularity.
+
+
+
+
+
+##7. Find historical information about air travel on the Internet and/or in reference materials that sheds light on the results from Exercises 5 and 6. Write a mini-article (less than 250 words) that interprets your statistical findings from Exercises 5 and 6 in the context of the historical information you found.
+
+#The golden age of air travel is usually a reference to air travel in the 1950's and 1960's. Airplanes became more commercialized, faster, safer, and more accommodating than ever before around this time. This can be pinpointed by our data to be estimated as having the biggest effect on people wanting to fly internationally in early-to-mid 1955.
+
+
+
+
+
+
+
+##8. Use bcp() on the AirPassengers time series. Plot and interpret the results. Make sure to contrast these results with those from Exercise 6.
+library(bcp)
+set.seed(1)
+Exercise8 <- bcp(AirPassengers)
+Exercise8
+plot(Exercise8)
+#In our plot, the upper pane shows the original time series and the lower pane shows the probabilities of a mean change at each point in time. We see large probabilities a little over 100 and a little below 120, but rather than eyeballing it, let's look at those probabilities greater than 0.95.
+plot(Exercise8$posterior.prob > 0.95)
+#This seems to show us that none of the probabilities are above 0.95. Let's check for those above 0.90 instead.
+plot(Exercise8$posterior.prob > 0.90)
+#Even these points are those we identified before, somewhere between 100 and 120. We could calculate these, but what is more important instead is that we see these are nowhere near the change points that we found in exercises 5 and 6.
+
+
+
+
+
+
+
+```

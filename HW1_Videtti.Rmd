@@ -1,0 +1,68 @@
+---
+title: "HW1_Videtti"
+output:
+  word_document: default
+  pdf_document: default
+---
+```{r}
+#HOMEWORK 1 by Nick Videtti: I produced the work below with only help from the textbook and asynchronous material.
+
+
+
+
+#Example 1: Using the material from this chapter and possibly other information that you look up, write a brief definition of these terms in your own words: mean, median, mode, variance, standard deviation, histogram, normal distribution, and Poisson distribution.
+
+#mean - the sum of values divided by the number of values, also known as the average
+
+#median - value of the middle observation when all observations are listed in order (average of two middle observations if there are an even number of observations)
+
+#mode - most frequent value that occurs
+
+#variance - average squared deviation from the mean
+
+#standard deviation - square root of the average squared deviation from the mean, or square root of variance
+
+#histogram - frequency plot that visualizes the distribution of data using bins that cover a range of values
+
+#normal distribution - "bell curve" distribution where data are symmetrically distributed around the mean, with most values occurring at or near the mean
+
+#Poisson distribution - distribution that models positive values where the shape of the distribution varies and is heavily influenced by its lambda value
+##########################################################################################################################
+
+
+
+
+#Exercise 3: Use the data() function to get a list of the data sets that are included with the basic installation of R: just type “data()” at the command line and press enter. Choose a data set from the list that contains at least one numeric variable—for example, the Bio‑ chemical Oxygen Demand (BOD) data set. Use the summary() command to summarize the variables in the data set you selected—for example, summary(BOD). Write a brief description of the mean and median of each numeric variable in the data set. Make sure you define what a “mean” and a “median” are, that is, the technical definition and practical meaning of each of these quantities.
+
+data()
+
+?WorldPhones
+
+WorldPhones
+
+summary(WorldPhones)
+
+#We have data here that show the number of telephones in 8 different regions in the years 1951, 1956, 1957, 1958, 1959, 1960, and 1961. All 8 variables are numeric, and they are simply the number of telephones in each region.
+
+#As we discussed in Exercise 1, mean is the sum of values divided by the number of values, also known as the average, and median is the value of the middle observation when all observations are listed in order (average of two middle observations if there are an even number of observations). 
+
+#This tells us that the mean of each of these variables is the average number of telephones in each region over the 7 different years that we have data for. Also, the median of each of these variables is the middle value (when values are listed in order) for the number of telephones in each region over the 7 different years we have data for. For example, the mean of the Europe variable is the average number of telephones that were in Europe between 1951, 1956, 1957, 1958, 1959, 1960, and 1961, and the median of Europe is the middle value (if all values are listed in order) of the number of telephones that were in Europe between 1951, 1956, 1957, 1958, 1959, 1960, and 1961.
+################################################################################################################
+
+
+
+
+#Exercise 4: As in the previous exercise, use the data() function to get a list of the data sets that are included with the basic installation of R. Choose a data set that includes just one variable, for example, the LakeHuron data set (levels of Lake Huron in the years 1875 through 1972). Use the hist() command to create a histogram of the variable—for example, hist(LakeHuron). Describe the shape of the histogram in words. Which of the distribution types do you think these data fit most closely (e.g., normal, Poisson). Speculate on why your selected data may fit that distribution.
+
+data()
+
+airmiles
+
+data.frame(airmiles)
+
+?airmiles
+
+hist(airmiles)
+
+#These data appear to have a right-skewed distribution. The data also appear to be distributed only across positive values, and this distribution is certainly not anywhere close to symmetrical. For these reasons, these data seem to most closely fit Poisson distribution.
+```
